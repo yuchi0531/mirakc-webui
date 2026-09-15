@@ -55,7 +55,13 @@ export function useSse(): UseSseResult {
     };
 
     const open = () => {
-      source = new EventSource('/events');
+      try {
+        source = new EventSource('/events');
+      } catch {
+        setError('イベントストリームを初期化できませんでした。');
+        setStatus('error');
+        return;
+      }
       source.onopen = () => {
         // Reset: the server replays initial state on every connect.
         seqRef.current = 0;
@@ -64,7 +70,12 @@ export function useSse(): UseSseResult {
         setStatus('open');
       };
       source.onerror = () => {
-        setError('イベントストリームへの接続が切断されました。再接続を試行しています。');
+        if (source?.readyState === EventSource.CLOSED) {
+          // Fatal (e.g. 404/401): the browser will not reconnect on its own.
+          setError('接続が切断されました(再試行されません)。再読み込みしてください。');
+        } else {
+          setError('イベントストリームへの接続が切断されました。再接続を試行しています。');
+        }
         setStatus('error');
       };
       for (const type of KNOWN_EVENTS) source.addEventListener(type, handle(type));

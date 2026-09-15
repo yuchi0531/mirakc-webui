@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Avatar, Box, Paper, Tooltip, Typography } from '@mui/material';
 import type { Service } from '../api/types';
 import { logoUrl } from '../api/client';
@@ -8,7 +7,6 @@ interface ServiceCardProps {
 }
 
 function ServiceCard({ service }: ServiceCardProps) {
-  const [logoFailed, setLogoFailed] = useState(false);
   const id = String(service.id);
   const tooltip = [
     `ID: ${id}`,
@@ -33,10 +31,10 @@ function ServiceCard({ service }: ServiceCardProps) {
           '&:hover': { borderColor: 'primary.main' },
         }}
       >
+        {/* MUI Avatar preloads src with `new Image()` and shows children on load error. */}
         <Avatar
           variant="rounded"
-          src={logoFailed ? undefined : logoUrl(id)}
-          onError={() => setLogoFailed(true)}
+          src={logoUrl(id)}
           sx={{ width: 56, height: 56, bgcolor: 'background.default', color: 'primary.main' }}
         >
           {service.name?.charAt(0) ?? '?'}

@@ -19,7 +19,11 @@ async function getJson<T>(path: string, signal?: AbortSignal): Promise<T> {
     }
     throw new Error(`${path} が HTTP ${response.status} を返しました${detail}`);
   }
-  return (await response.json()) as T;
+  try {
+    return (await response.json()) as T;
+  } catch {
+    throw new Error(`${path} が JSON を返しませんでした`);
+  }
 }
 
 export function getVersion(signal?: AbortSignal): Promise<Version> {
@@ -50,4 +54,9 @@ export function tunerUsers(tuner: Tuner): TunerUser[] {
     seen.add(key);
     return true;
   });
+}
+
+/** A tuner is busy when the API says so or when any user (user/users) is attached. */
+export function isTunerBusy(tuner: Tuner): boolean {
+  return tuner.isFree === false || tunerUsers(tuner).length > 0;
 }

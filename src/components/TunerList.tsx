@@ -1,6 +1,6 @@
 import { Box, Chip, Divider, Paper, Stack, Typography } from '@mui/material';
 import type { Tuner } from '../api/types';
-import { tunerUsers } from '../api/client';
+import { isTunerBusy, tunerUsers } from '../api/client';
 
 const TYPE_COLORS: Record<string, 'primary' | 'secondary' | 'success' | 'default'> = {
   GR: 'primary',
@@ -37,7 +37,7 @@ export function TunerList({ tuners }: Props) {
     <Stack spacing={2}>
       {sorted.map((tuner) => {
         const users = tunerUsers(tuner);
-        const busy = tuner.isFree === false || users.length > 0;
+        const busy = isTunerBusy(tuner);
         return (
           <Paper key={tuner.index} variant="outlined" sx={{ p: 2 }}>
             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>

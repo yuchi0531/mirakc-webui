@@ -4,6 +4,7 @@
 
 - バックエンド不要: `dist/` を mirakc 内蔵 Web サーバの `server.mounts` にマウントするだけで動作
 - same-origin 前提(mirakc に認証・CORS 層はないため、別オリジン配信は非対応)
+- **same-origin ルート配信のみ対応**: API・SSE のパスはオリジンルート絶対 (`/api/...`, `/events`) です。mirakc をオリジンのルート (`/`) にマウントするか、同一オリジン上で直接 mount する構成でのみ動作します。`https://host/mirakc/` のようなリバースプロキシのサブパス配下では API 呼び出しが失敗します。
 - `base: './'` により任意のマウントパス(`/www` など)に対応
 
 ## 機能
@@ -24,6 +25,7 @@
 - チューナープロセスの kill(`DELETE /api/tuners/{index}/process` なし)
 - 更新アラート(`latest == current` のため無意味)
 - ライブプレイヤー / EPG 番組表 / 録画・タイムシフト UI(mirakc に該当 UI 向け API はあるが、本 WebUI のスコープ外)
+- リバースプロキシのサブパス配下での配信(API・SSE がオリジンルート絶対パスのため、same-origin ルート配信のみ対応)
 
 ## ビルド
 

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
+  Box,
   Chip,
+  CircularProgress,
   Divider,
   Paper,
   Stack,
@@ -15,27 +17,54 @@ import { TunerList } from './TunerList';
 
 const SERVICES_POLL_MS = 60_000;
 
+/** Shown until the first successful fetch (empty-state text is reserved for 0 rows). */
+function Loading() {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+      <CircularProgress size={24} />
+    </Box>
+  );
+}
+
 interface Props {
   version: Version | null;
-  tuners: Tuner[];
+  tuners: Tuner[] | null;
   tunersError: string | null;
   sseEvents: SseEvent[];
 }
 
 export function StatusTab({ version, tuners, tunersError, sseEvents }: Props) {
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices] = useState<Service[] | null>(null);
   const [servicesError, setServicesError] = useState<string | null>(null);
 
+  // Monotonic sequence ignores out-of-order responses; aborted on unmount.
+  const servicesSeqRef = useRef(0);
+  const servicesAbortRef = useRef<AbortController | null>(null);
+
   const loadServices = useCallback(() => {
-    getServices()
+    const seq = ++servicesSeqRef.current;
+    servicesAbortRef.current?.abort();
+    const controller = new AbortController();
+    servicesAbortRef.current = controller;
+    getServices(controller.signal)
       .then((list) => {
+        if (seq !== servicesSeqRef.current) return;
         setServices(Array.isArray(list) ? list : []);
         setServicesError(null);
       })
       .catch((err: unknown) => {
+        if (seq !== servicesSeqRef.current || controller.signal.aborted) return;
         setServicesError(err instanceof Error ? err.message : String(err));
       });
   }, []);
+
+  useEffect(
+    () => () => {
+      servicesSeqRef.current += 1;
+      servicesAbortRef.current?.abort();
+    },
+    []
+  );
 
   // Initial fetch + periodic refresh (skipped while hidden).
   usePolling(loadServices, SERVICES_POLL_MS);
@@ -84,7 +113,13 @@ export function StatusTab({ version, tuners, tunersError, sseEvents }: Props) {
             サービス一覧を取得できません: {servicesError}
           </Alert>
         )}
-        <ServicesGrid services={services} />
+        {services === null ? (
+          servicesError ? null : (
+            <Loading />
+          )
+        ) : (
+          <ServicesGrid services={services} />
+        )}
       </section>
 
       <section>
@@ -96,7 +131,7 @@ export function StatusTab({ version, tuners, tunersError, sseEvents }: Props) {
             チューナー一覧を取得できません: {tunersError}
           </Alert>
         )}
-        <TunerList tuners={tuners} />
+        {tuners === null ? (tunersError ? null : <Loading />) : <TunerList tuners={tuners} />}
       </section>
     </Stack>
   );

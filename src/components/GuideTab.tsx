@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Paper, Stack, Typography } from '@mui/material';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
@@ -34,14 +34,24 @@ interface RowProps {
 function GuideRow({ label, value }: RowProps) {
   const [copied, setCopied] = useState(false);
   const [failed, setFailed] = useState(false);
+  const resetTimer = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (resetTimer.current !== null) window.clearTimeout(resetTimer.current);
+    },
+    []
+  );
 
   const onCopy = async () => {
     const ok = await copyText(value);
     setCopied(ok);
     setFailed(!ok);
-    window.setTimeout(() => {
+    if (resetTimer.current !== null) window.clearTimeout(resetTimer.current);
+    resetTimer.current = window.setTimeout(() => {
       setCopied(false);
       setFailed(false);
+      resetTimer.current = null;
     }, 2000);
   };
 

@@ -52,7 +52,3 @@ export interface SseEvent {
   data: unknown;
   receivedAt: number;
 }
-
-export interface ApiError {
-  message: string;
-}

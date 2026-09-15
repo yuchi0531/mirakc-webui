@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Box, Container, Tab, Tabs, Typography } from '@mui/material';
-import { getTuners, getVersion } from './api/client';
+import { getTuners, getVersion, isTunerBusy } from './api/client';
 import type { SseEvent, Tuner, Version } from './api/types';
 import { useSse } from './hooks/useSse';
 import { Header } from './components/Header';
@@ -24,7 +24,7 @@ export default function App() {
   const [tab, setTab] = useState(0);
   const [version, setVersion] = useState<Version | null>(null);
   const [versionError, setVersionError] = useState<string | null>(null);
-  const [tuners, setTuners] = useState<Tuner[]>([]);
+  const [tuners, setTuners] = useState<Tuner[] | null>(null);
   const [tunersError, setTunersError] = useState<string | null>(null);
   const { status: sseStatus, events: sseEvents, error: sseError } = useSse();
 
@@ -43,13 +43,24 @@ export default function App() {
     return () => controller.abort();
   }, []);
 
+  // Monotonic sequence ignores out-of-order responses; the controller is
+  // aborted on unmount so no state is set after teardown.
+  const tunerSeqRef = useRef(0);
+  const tunerAbortRef = useRef<AbortController | null>(null);
+
   const loadTuners = useCallback(() => {
-    getTuners()
+    const seq = ++tunerSeqRef.current;
+    tunerAbortRef.current?.abort();
+    const controller = new AbortController();
+    tunerAbortRef.current = controller;
+    getTuners(controller.signal)
       .then((list) => {
+        if (seq !== tunerSeqRef.current) return;
         setTuners(Array.isArray(list) ? list : []);
         setTunersError(null);
       })
       .catch((err: unknown) => {
+        if (seq !== tunerSeqRef.current || controller.signal.aborted) return;
         setTunersError(err instanceof Error ? err.message : String(err));
       });
   }, []);
@@ -57,6 +68,10 @@ export default function App() {
   // Fetch tuners initially.
   useEffect(() => {
     loadTuners();
+    return () => {
+      tunerSeqRef.current += 1;
+      tunerAbortRef.current?.abort();
+    };
   }, [loadTuners]);
 
   // Refetch on tuner.status-changed (no periodic polling needed).
@@ -69,9 +84,7 @@ export default function App() {
     if (newest.type === 'tuner.status-changed') loadTuners();
   }, [sseEvents, loadTuners]);
 
-  const activeTuners = tuners.filter(
-    (t) => t.isFree === false || (t.users?.length ?? 0) > 0 || t.user != null
-  ).length;
+  const activeTuners = (tuners ?? []).filter(isTunerBusy).length;
 
   return (
     <>
