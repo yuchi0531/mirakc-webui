@@ -1,12 +1,12 @@
 import { createTheme } from '@mui/material/styles';
 
-// Material Design 2 look on MUI v5, dark mode, Mirakurun-style gold primary.
+// miraview と同じ MUI v5 dark パレット。
+// primary / secondary のみ明示し、残り(背景・文字色など)は MUI v5 dark のデフォルト値に従う。
 export const theme = createTheme({
   palette: {
     mode: 'dark',
-    primary: { main: '#ffd56c' },
-    secondary: { main: '#90caf9' },
-    background: { default: '#121212', paper: '#1e1e1e' },
+    primary: { main: '#90caf9' },
+    secondary: { main: '#ce93d8' },
   },
   typography: {
     fontFamily: [

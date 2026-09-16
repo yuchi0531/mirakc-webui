@@ -38,9 +38,24 @@ export interface Tuner {
   types: string[];
   command: string;
   pid?: number | null;
+  isAvailable?: boolean;
   isFree?: boolean;
+  isRemote?: boolean;
+  isUsing?: boolean;
+  isFault?: boolean;
   user?: TunerUser | null;
   users?: TunerUser[];
+}
+
+/** Program fields used by the WebUI; extra fields are preserved via the index
+ *  signature. Mirrors GET /api/programs (Mirakurun-compatible). */
+export interface Program {
+  id: string | number;
+  serviceId: number;
+  startAt: number;
+  duration: number;
+  name?: string;
+  [key: string]: unknown;
 }
 
 export type SseStatus = 'connecting' | 'open' | 'error';

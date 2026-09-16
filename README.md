@@ -1,6 +1,6 @@
 # mirakc WebUI
 
-[mirakc](https://github.com/mirakc/mirakc) 用の静的 WebUI (SPA)。Mirakurun 3.9.0-beta4 の公式 WebUI と同等の画面構成(ステータス / イベント / 接続ガイド)を持ち、MUI v5 のダークテーマ(Material Design 2)で日本語のみ表示します。
+[mirakc](https://github.com/mirakc/mirakc) 用の静的 WebUI (SPA)。Mirakurun 3.9.0-beta4 の公式 WebUI と同等の画面構成(ステータス / チャンネル一覧 / イベント / 接続ガイド)を持ち、[miraview](https://github.com/maeda577/miraview) と同じ MUI v5 dark パレット(primary `#90caf9` / secondary `#ce93d8`)で日本語のみ表示します。
 
 - バックエンド不要: `dist/` を mirakc 内蔵 Web サーバの `server.mounts` にマウントするだけで動作
 - same-origin 前提(mirakc に認証・CORS 層はないため、別オリジン配信は非対応)
@@ -11,7 +11,8 @@
 
 | タブ | 内容 |
 | --- | --- |
-| ステータス | バージョン情報、サービスグリッド(ロゴ・EPG 状態)、チューナー一覧(使用状況・ユーザー) |
+| ステータス | システム情報(バージョン・接続状態・サーバー)、統計(サービス/番組/チューナー数)、チューナー詳細(使用状況・ユーザー) |
+| チャンネル一覧 | サービスをテレビ / ラジオ / データ / その他に分類して表示(ロゴ・EPG 状態) |
 | イベント | `GET /events` (SSE) のフィード。新着順・最大 200 件 |
 | 接続ガイド | 各種 URL とコピーボタン |
 
@@ -74,4 +75,4 @@ Vite の dev サーバが `/api` と `/events` を `http://localhost:40772` の 
 
 ## 技術スタック
 
-React 18 + TypeScript + Vite + MUI v5。ルータ・状態管理ライブラリ・プレイヤーライブラリは使用していません。
+React 18 + TypeScript + Vite + MUI v5。ルータ・状態管理ライブラリ・プレイヤーライブラリは使用していません。テーマは miraview と同じ MUI v5 dark パレット(primary `#90caf9` / secondary `#ce93d8`、背景 `#121212`)です。

@@ -1,4 +1,16 @@
-import { Box, Chip, Divider, Paper, Stack, Typography } from '@mui/material';
+import {
+  Box,
+  Chip,
+  Divider,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Typography,
+} from '@mui/material';
 import type { Tuner } from '../api/types';
 import { isTunerBusy, tunerUsers } from '../api/client';
 
@@ -20,6 +32,95 @@ function typeChip(type: string) {
   );
 }
 
+/** miraview と同じ色分け: 障害 → グレー、空き → 緑、使用中(優先度 0 以下) → 黄、使用中 → 赤。 */
+function statusColor(tuner: Tuner): string {
+  if (tuner.isFault === true) return 'grey.600';
+  if (!isTunerBusy(tuner)) return 'success.main';
+  const priorities = tunerUsers(tuner).map((u) => u.priority);
+  return priorities.length > 0 && Math.min(...priorities) <= 0 ? 'warning.main' : 'error.main';
+}
+
+/** Flag chips are only rendered for fields the API actually provides. */
+function flagChips(tuner: Tuner) {
+  const flags: { label: string; value: boolean | undefined }[] = [
+    { label: '利用可能', value: tuner.isAvailable },
+    { label: '空き', value: tuner.isFree },
+    { label: '使用中', value: tuner.isUsing },
+    { label: 'リモート', value: tuner.isRemote },
+    { label: '障害', value: tuner.isFault },
+  ];
+  return flags
+    .filter((f): f is { label: string; value: boolean } => f.value !== undefined)
+    .map((f) => (
+      <Chip key={f.label} label={f.label} size="small" color="primary" disabled={!f.value} />
+    ));
+}
+
+function TunerCard({ tuner }: { tuner: Tuner }) {
+  const users = tunerUsers(tuner);
+  const busy = isTunerBusy(tuner);
+
+  return (
+    <Paper variant="outlined" sx={{ p: 2 }}>
+      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+        <Box
+          sx={{
+            width: 12,
+            height: 12,
+            borderRadius: '50%',
+            bgcolor: statusColor(tuner),
+            flexShrink: 0,
+          }}
+        />
+        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+          #{tuner.index}
+        </Typography>
+        <Typography variant="subtitle1" sx={{ mr: 1 }}>
+          {tuner.name}
+        </Typography>
+        {tuner.types?.map(typeChip)}
+        {flagChips(tuner)}
+      </Stack>
+
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        display="block"
+        sx={{ mt: 1, fontFamily: 'monospace', wordBreak: 'break-all' }}
+      >
+        {tuner.command || '-'}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" display="block">
+        pid: {tuner.pid ?? '-'}
+      </Typography>
+
+      {busy && users.length > 0 && (
+        <>
+          <Divider sx={{ my: 1 }} />
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Client ID</TableCell>
+                <TableCell>優先度</TableCell>
+                <TableCell>Agent</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {users.map((user, i) => (
+                <TableRow key={`${user.id}-${i}`}>
+                  <TableCell sx={{ wordBreak: 'break-all' }}>{user.id}</TableCell>
+                  <TableCell>{user.priority}</TableCell>
+                  <TableCell>{user.agent ?? '-'}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </>
+      )}
+    </Paper>
+  );
+}
+
 interface Props {
   tuners: Tuner[];
 }
@@ -35,48 +136,9 @@ export function TunerList({ tuners }: Props) {
   const sorted = [...tuners].sort((a, b) => a.index - b.index);
   return (
     <Stack spacing={2}>
-      {sorted.map((tuner) => {
-        const users = tunerUsers(tuner);
-        const busy = isTunerBusy(tuner);
-        return (
-          <Paper key={tuner.index} variant="outlined" sx={{ p: 2 }}>
-            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-              <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                #{tuner.index}
-              </Typography>
-              <Typography variant="subtitle1" sx={{ mr: 1 }}>
-                {tuner.name}
-              </Typography>
-              {tuner.types?.map(typeChip)}
-              <Chip
-                label={busy ? '使用中' : '空き'}
-                size="small"
-                color={busy ? 'warning' : 'success'}
-              />
-            </Stack>
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
-              コマンド: {tuner.command}
-              {tuner.pid != null ? ` (pid ${tuner.pid})` : ''}
-            </Typography>
-            {users.length > 0 && (
-              <>
-                <Divider sx={{ my: 1 }} />
-                <Stack spacing={0.5}>
-                  {users.map((user, i) => (
-                    <Box key={`${user.id}-${i}`} sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                      <Chip label={`優先度 ${user.priority}`} size="small" variant="outlined" />
-                      <Typography variant="body2" sx={{ wordBreak: 'break-all' }}>
-                        {user.id}
-                        {user.agent ? ` (${user.agent})` : ''}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Stack>
-              </>
-            )}
-          </Paper>
-        );
-      })}
+      {sorted.map((tuner) => (
+        <TunerCard key={tuner.index} tuner={tuner} />
+      ))}
     </Stack>
   );
 }

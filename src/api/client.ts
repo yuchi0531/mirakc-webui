@@ -1,4 +1,4 @@
-import type { Service, Tuner, TunerUser, Version } from './types';
+import type { Program, Service, Tuner, TunerUser, Version } from './types';
 
 /** All paths are origin-root absolute so they work under any mount path
  *  (e.g. mirakc server.mounts at /www) and through the dev proxy. */
@@ -34,8 +34,17 @@ export function getServices(signal?: AbortSignal): Promise<Service[]> {
   return getJson<Service[]>('/api/services', signal);
 }
 
+/** Fetch a single service by ServiceItem id (used to merge SSE updates). */
+export function getService(id: string | number, signal?: AbortSignal): Promise<Service> {
+  return getJson<Service>(`/api/services/${encodeURIComponent(String(id))}`, signal);
+}
+
 export function getTuners(signal?: AbortSignal): Promise<Tuner[]> {
   return getJson<Tuner[]>('/api/tuners', signal);
+}
+
+export function getPrograms(signal?: AbortSignal): Promise<Program[]> {
+  return getJson<Program[]>('/api/programs', signal);
 }
 
 export function logoUrl(id: string | number): string {
