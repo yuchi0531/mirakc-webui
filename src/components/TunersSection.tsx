@@ -1,8 +1,9 @@
 import {
+  Alert,
   Box,
+  Card,
   Chip,
   Divider,
-  Paper,
   Stack,
   Table,
   TableBody,
@@ -13,11 +14,14 @@ import {
 } from '@mui/material';
 import type { Tuner } from '../api/types';
 import { isTunerBusy, tunerUsers } from '../api/client';
+import { EmptyState, SectionHeader } from './EmptyState';
 
-const TYPE_COLORS: Record<string, 'primary' | 'secondary' | 'success' | 'default'> = {
+const TYPE_COLORS: Record<string, 'primary' | 'secondary' | 'success' | 'warning' | 'default'> = {
   GR: 'primary',
   BS: 'secondary',
   CS: 'success',
+  SKY: 'warning',
+  BS4K: 'secondary',
 };
 
 function typeChip(type: string) {
@@ -40,28 +44,12 @@ function statusColor(tuner: Tuner): string {
   return priorities.length > 0 && Math.min(...priorities) <= 0 ? 'warning.main' : 'error.main';
 }
 
-/** Flag chips are only rendered for fields the API actually provides. */
-function flagChips(tuner: Tuner) {
-  const flags: { label: string; value: boolean | undefined }[] = [
-    { label: '利用可能', value: tuner.isAvailable },
-    { label: '空き', value: tuner.isFree },
-    { label: '使用中', value: tuner.isUsing },
-    { label: 'リモート', value: tuner.isRemote },
-    { label: '障害', value: tuner.isFault },
-  ];
-  return flags
-    .filter((f): f is { label: string; value: boolean } => f.value !== undefined)
-    .map((f) => (
-      <Chip key={f.label} label={f.label} size="small" color="primary" disabled={!f.value} />
-    ));
-}
-
 function TunerCard({ tuner }: { tuner: Tuner }) {
   const users = tunerUsers(tuner);
   const busy = isTunerBusy(tuner);
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
+    <Card variant="outlined" sx={{ p: 2 }}>
       <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
         <Box
           sx={{
@@ -79,7 +67,6 @@ function TunerCard({ tuner }: { tuner: Tuner }) {
           {tuner.name}
         </Typography>
         {tuner.types?.map(typeChip)}
-        {flagChips(tuner)}
       </Stack>
 
       <Typography
@@ -117,28 +104,35 @@ function TunerCard({ tuner }: { tuner: Tuner }) {
           </Table>
         </>
       )}
-    </Paper>
+    </Card>
   );
 }
 
 interface Props {
-  tuners: Tuner[];
+  tuners: Tuner[] | null;
+  tunersError: string | null;
 }
 
-export function TunerList({ tuners }: Props) {
-  if (tuners.length === 0) {
-    return (
-      <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
-        チューナーが見つかりません。
-      </Typography>
-    );
-  }
-  const sorted = [...tuners].sort((a, b) => a.index - b.index);
+export function TunersSection({ tuners, tunersError }: Props) {
+  const sorted = tuners ? [...tuners].sort((a, b) => a.index - b.index) : null;
+
   return (
-    <Stack spacing={2}>
-      {sorted.map((tuner) => (
-        <TunerCard key={tuner.index} tuner={tuner} />
-      ))}
-    </Stack>
+    <section>
+      <SectionHeader>チューナー ({tuners?.length ?? 0})</SectionHeader>
+      {tunersError && <Alert severity="error">チューナー一覧を取得できません: {tunersError}</Alert>}
+      {tuners === null ? (
+        tunersError ? null : (
+          <EmptyState title="ロード中" loading />
+        )
+      ) : sorted!.length === 0 ? (
+        <EmptyState title="チューナーなし" description="config.yml に tuners を定義してください。" />
+      ) : (
+        <Stack spacing={1.5}>
+          {sorted!.map((tuner) => (
+            <TunerCard key={tuner.index} tuner={tuner} />
+          ))}
+        </Stack>
+      )}
+    </section>
   );
 }

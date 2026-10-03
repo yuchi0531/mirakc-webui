@@ -51,6 +51,21 @@ export function logoUrl(id: string | number): string {
   return `/api/services/${encodeURIComponent(String(id))}/logo`;
 }
 
+/**
+ * URL of the channel passthrough stream.
+ * `channel` is an opaque StreamID for BS4K, so it is encoded as-is.
+ * `tuner` is accepted as a query helper only for display; the actual tuner
+ * pinning uses the `X-Mirakc-Tuner` request header (see `curl` examples).
+ */
+export function channelStreamUrl(channelType: string, channel: string): string {
+  return `/api/channels/${encodeURIComponent(channelType)}/${encodeURIComponent(channel)}/stream`;
+}
+
+export function serviceStreamUrl(id: string | number, decode = false): string {
+  const path = `/api/services/${encodeURIComponent(String(id))}/stream`;
+  return decode ? `${path}?decode=1` : path;
+}
+
 /** Normalize one tuner entry from the API (user/users may both be present). */
 export function tunerUsers(tuner: Tuner): TunerUser[] {
   const list: TunerUser[] = [];
