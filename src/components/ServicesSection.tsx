@@ -2,8 +2,6 @@ import { useMemo, useState } from 'react';
 import {
   Alert,
   Box,
-  Card,
-  CardActionArea,
   Chip,
   FormControlLabel,
   Stack,
@@ -11,6 +9,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ScheduleOutlinedIcon from '@mui/icons-material/ScheduleOutlined';
 import { useNavigate } from 'react-router-dom';
 import { isMmtChannelType } from '../api/types';
 import { isTvService, SERVICE_TYPE_DATA } from '../api/classify';
@@ -26,32 +26,31 @@ function category(service: Service): Filter {
   return 'other';
 }
 
-function epgIndicator(service: Service) {
-  if (service.epgReady !== undefined) {
-    return (
-      <Typography variant="caption" color={service.epgReady ? 'success.main' : 'text.secondary'}>
-        {service.epgReady ? 'EPG 取得済み' : 'EPG 未取得'}
-      </Typography>
-    );
-  }
-  if (service.epgUpdated !== undefined) {
-    return (
-      <Typography variant="caption" color={service.epgUpdated ? 'success.main' : 'text.secondary'}>
-        {service.epgUpdated ? 'EPG 更新済み' : 'EPG 未更新'}
-      </Typography>
-    );
-  }
-  return null;
+/** Small EPG state icon (Mirakurun official uses refresh/tick/time icons). */
+function EpgStatusIcon({ service }: { service: Service }) {
+  if (service.epgReady === undefined && service.epgUpdated === undefined) return null;
+  const ready = service.epgReady ?? service.epgUpdated ?? false;
+  return (
+    <Tooltip title={ready ? 'EPG 取得済み' : 'EPG 未取得'} placement="top">
+      <Box component="span" sx={{ display: 'inline-flex', flexShrink: 0 }}>
+        {ready ? (
+          <CheckCircleOutlineIcon sx={{ fontSize: 15, color: 'success.main' }} />
+        ) : (
+          <ScheduleOutlinedIcon sx={{ fontSize: 15, color: 'text.disabled' }} />
+        )}
+      </Box>
+    </Tooltip>
+  );
 }
 
-function ServiceCard({ service, onClick }: { service: Service; onClick: () => void }) {
+function ServiceItem({ service, onClick }: { service: Service; onClick: () => void }) {
   const id = String(service.id);
   const type = service.channel?.type ?? '';
   const channelText = `${type} ${service.channel?.channel ?? ''}`.trim();
   const tooltip = [
     `#${id}`,
-    `SID: ${service.serviceId}`,
-    `NID: ${service.networkId}`,
+    `SID: 0x${service.serviceId.toString(16).toUpperCase()} (${service.serviceId})`,
+    `NID: 0x${service.networkId.toString(16).toUpperCase()} (${service.networkId})`,
     `種別: ${type || '?'}`,
     channelText ? `チャンネル: ${channelText}` : '',
     service.remoteControlKeyId !== undefined ? `リモコンキーID: ${service.remoteControlKeyId}` : '',
@@ -61,42 +60,57 @@ function ServiceCard({ service, onClick }: { service: Service; onClick: () => vo
 
   return (
     <Tooltip title={tooltip} placement="top" arrow>
-      <Card variant="outlined" sx={{ height: '100%' }}>
-        <CardActionArea onClick={onClick} sx={{ p: 1.5, height: '100%' }}>
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Box
-              component="img"
-              src={logoUrl(id)}
-              alt=""
-              sx={{
-                width: 48,
-                height: 48,
-                objectFit: 'contain',
-                flexShrink: 0,
-                borderRadius: 1,
-                bgcolor: 'background.default',
-              }}
-              onError={(e) => {
-                (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
-              }}
-            />
-            <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                <Typography variant="body2" noWrap sx={{ fontWeight: 700 }}>
-                  {service.name || '(名称不明)'}
-                </Typography>
-                {isMmtChannelType(type) && (
-                  <Chip label="4K" size="small" color="secondary" variant="outlined" />
-                )}
-              </Stack>
-              <Typography variant="caption" color="text.secondary" noWrap display="block">
-                {channelText || '-'}
-              </Typography>
-              {epgIndicator(service)}
-            </Box>
-          </Stack>
-        </CardActionArea>
-      </Card>
+      <Box
+        role="button"
+        tabIndex={0}
+        onClick={onClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick();
+          }
+        }}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.75,
+          px: 1,
+          py: 0.5,
+          minWidth: 0,
+          borderRadius: 0.5,
+          cursor: 'pointer',
+          '&:hover': { bgcolor: 'action.hover' },
+        }}
+      >
+        {/* mirakc only has logo data for services listed in resource.logos. */}
+        {service.hasLogoData === true && (
+          <Box
+            component="img"
+            src={logoUrl(id)}
+            alt=""
+            sx={{ width: 28, height: 20, objectFit: 'contain', flexShrink: 0, borderRadius: 0.25 }}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+            }}
+          />
+        )}
+        <Typography
+          variant="body2"
+          noWrap
+          sx={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 500 }}
+        >
+          {service.name || '(名称不明)'}
+        </Typography>
+        {isMmtChannelType(type) && (
+          <Chip
+            label="4K"
+            color="secondary"
+            variant="outlined"
+            sx={{ height: 16, fontSize: 10, flexShrink: 0, '& .MuiChip-label': { px: 0.5 } }}
+          />
+        )}
+        <EpgStatusIcon service={service} />
+      </Box>
     </Tooltip>
   );
 }
@@ -158,12 +172,12 @@ export function ServicesSection({ services, servicesError }: Props) {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
-            gap: 1.5,
+            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+            gap: 0.5,
           }}
         >
           {shown.map((s) => (
-            <ServiceCard
+            <ServiceItem
               key={String(s.id)}
               service={s}
               onClick={() => navigate(`/epg/services/${encodeURIComponent(String(s.id))}`)}

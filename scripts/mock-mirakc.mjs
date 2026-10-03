@@ -10,13 +10,21 @@ const now = Date.now();
 const H = 3600_000;
 
 const services = [
-  { id: 3273601024, serviceId: 1024, networkId: 32736, type: 1, name: 'NHK総合', channel: { type: 'GR', channel: '27' }, remoteControlKeyId: 1, epgReady: true },
-  { id: 3273601025, serviceId: 1025, networkId: 32736, type: 1, name: 'NHK Eテレ', channel: { type: 'GR', channel: '26' }, remoteControlKeyId: 2, epgReady: true },
-  { id: 400101, serviceId: 101, networkId: 4, type: 1, name: 'NHK BS', channel: { type: 'BS', channel: 'BS15_0' }, remoteControlKeyId: 1, epgReady: false },
-  { id: 45328, serviceId: 101, networkId: 11, type: 1, name: 'NHK BS4K', channel: { type: 'BS4K', channel: '45328' }, remoteControlKeyId: 1, epgReady: true },
-  { id: 45280, serviceId: 102, networkId: 11, type: 1, name: 'NHK BS8K', channel: { type: 'BS4K', channel: '0xB0E0' }, epgReady: false },
-  { id: 500001, serviceId: 1, networkId: 5, type: 0xad, name: 'データ放送', channel: { type: 'CS', channel: 'ND02' } },
+  { id: 3273601024, serviceId: 1024, networkId: 32736, type: 1, name: 'NHK総合', channel: { type: 'GR', channel: '27' }, remoteControlKeyId: 1, epgReady: true, hasLogoData: true },
+  { id: 3273601025, serviceId: 1025, networkId: 32736, type: 1, name: 'NHK Eテレ', channel: { type: 'GR', channel: '26' }, remoteControlKeyId: 2, epgReady: true, hasLogoData: true },
+  { id: 400101, serviceId: 101, networkId: 4, type: 1, name: 'NHK BS', channel: { type: 'BS', channel: 'BS15_0' }, remoteControlKeyId: 1, epgReady: false, hasLogoData: true },
+  { id: 45328, serviceId: 101, networkId: 11, type: 1, name: 'NHK BS4K', channel: { type: 'BS4K', channel: '45328' }, remoteControlKeyId: 1, epgReady: true, hasLogoData: false },
+  { id: 45280, serviceId: 102, networkId: 11, type: 1, name: 'NHK BS8K', channel: { type: 'BS4K', channel: '0xB0E0' }, epgReady: false, hasLogoData: false },
+  { id: 500001, serviceId: 1, networkId: 5, type: 0xad, name: 'データ放送', channel: { type: 'CS', channel: 'ND02' }, hasLogoData: false },
 ];
+
+/** Minimal SVG logo so the logo rendering path is exercised. */
+function logo(res, label) {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="40"><rect width="64" height="40" fill="#1e3a8a"/><text x="32" y="26" font-size="20" fill="#fff" text-anchor="middle" font-family="sans-serif">${label}</text></svg>`;
+  res.writeHead(200, { 'Content-Type': 'image/svg+xml' });
+  res.end(svg);
+}
+
 
 function programs() {
   const list = [];
@@ -64,6 +72,9 @@ const server = http.createServer(async (req, res) => {
   if (path === '/api/tuners') return json(res, tuners);
   if (path === '/api/channels') return json(res, []);
   if (path.startsWith('/api/services/') && path.endsWith('/logo')) {
+    const id = Number(path.split('/')[3]);
+    const svc = services.find((s) => s.id === id);
+    if (svc?.hasLogoData) return logo(res, String(svc.serviceId));
     res.writeHead(404);
     return res.end();
   }
