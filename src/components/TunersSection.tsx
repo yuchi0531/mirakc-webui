@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   Alert,
   Box,
@@ -12,16 +13,17 @@ import {
   TableRow,
   Typography,
 } from '@mui/material';
-import type { Tuner } from '../api/types';
+import type { Tuner, TunerUser } from '../api/types';
 import { isTunerBusy, tunerUsers } from '../api/client';
 import { EmptyState, SectionHeader } from './EmptyState';
 
-const TYPE_COLORS: Record<string, 'primary' | 'secondary' | 'success' | 'warning' | 'default'> = {
+const TYPE_COLORS: Record<string, 'primary' | 'secondary' | 'success' | 'warning' | 'info' | 'default'> = {
   GR: 'primary',
   BS: 'secondary',
   CS: 'success',
   SKY: 'warning',
   BS4K: 'secondary',
+  CATV: 'info',
 };
 
 function typeChip(type: string) {
@@ -42,6 +44,27 @@ function statusColor(tuner: Tuner): string {
   if (!isTunerBusy(tuner)) return 'success.main';
   const priorities = tunerUsers(tuner).map((u) => u.priority);
   return priorities.length > 0 && Math.min(...priorities) <= 0 ? 'warning.main' : 'error.main';
+}
+
+/**
+ * Renders the tuned channel from a user's Mirakurun-compatible `streamSetting`.
+ * Only mirakc-BS4K reports this; upstream mirakc omits it, so fall back to '-'.
+ */
+function streamSettingLabel(user: TunerUser): ReactNode {
+  const setting = user.streamSetting;
+  if (!setting?.channel) return '-';
+  const { name, type, channel, tsmfRelTs } = setting.channel;
+  const ch = [type, channel].filter(Boolean).join(' ');
+  const parts = [name, ch].filter(Boolean).join(' / ');
+  const service =
+    setting.serviceId !== undefined
+      ? `SID ${setting.serviceId}`
+      : setting.networkId !== undefined
+        ? `NID ${setting.networkId}`
+        : '';
+  const tsmf = tsmfRelTs !== undefined ? `TSMF ${tsmfRelTs}` : '';
+  const tail = [service, tsmf].filter(Boolean).join(' ');
+  return tail ? `${parts} (${tail})` : parts || '-';
 }
 
 function TunerCard({ tuner }: { tuner: Tuner }) {
@@ -89,6 +112,7 @@ function TunerCard({ tuner }: { tuner: Tuner }) {
               <TableRow>
                 <TableCell>Client ID</TableCell>
                 <TableCell>優先度</TableCell>
+                <TableCell>チャンネル</TableCell>
                 <TableCell>Agent</TableCell>
               </TableRow>
             </TableHead>
@@ -97,6 +121,7 @@ function TunerCard({ tuner }: { tuner: Tuner }) {
                 <TableRow key={`${user.id}-${i}`}>
                   <TableCell sx={{ wordBreak: 'break-all' }}>{user.id}</TableCell>
                   <TableCell>{user.priority}</TableCell>
+                  <TableCell>{streamSettingLabel(user)}</TableCell>
                   <TableCell>{user.agent ?? '-'}</TableCell>
                 </TableRow>
               ))}

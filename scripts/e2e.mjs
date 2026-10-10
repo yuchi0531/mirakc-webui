@@ -32,10 +32,17 @@ check('home: ステータス', (await visit('/')).includes('ステータス'));
   check('home: 4K バッジ', text.includes('4K'));
   const logos = await page.locator('img[src*="/logo"]').count();
   check('home: ロゴ表示 (hasLogoData)', logos >= 3);
+  check('home: チューナーチャンネル (streamSetting)', text.includes('NHK BS / BS BS15_0'));
+  check('home: CATV TSMF', text.includes('TSMF 3'));
 }
 check('epg: 番組表', (await visit('/epg')).includes('EPG 番組表'));
 check('epg: BS4K 列', (await visit('/epg')).includes('NHK BS4K'));
+check('epg: CATV フィルタ', (await visit('/epg')).includes('CATV'));
 check('epg: サービス週間ビュー', (await visit('/epg/services/45328')).includes('8日間'));
+{
+  const text = await visit('/epg');
+  check('epg: CATV サービス', text.includes('CATV TBS'));
+}
 check('search', (await visit('/epg/search?q=NHK')).includes('件'));
 {
   const text = await visit('/about');

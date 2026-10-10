@@ -160,6 +160,16 @@ export function AboutView() {
           </Typography>
           <Divider />
           <Typography variant="body2" sx={{ fontWeight: 700 }}>
+            CATV (ケーブルテレビ) チャンネル種別
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            <code>CATV</code> はケーブルテレビのチャンネル種別で、GR/BS/CS/SKY と同じ MPEG-TS
+            パイプラインを使います。チャンネル番号は <code>C17</code> のような英数字(CATV 形式)も指定でき、
+            <code>tsmf-rel-ts</code> で多重フレームから相対 TS 番号を抽出できます。BS4K と違い番組単位の
+            ストリームも利用できます。EPG 番組表・サービス一覧のチャンネル種別フィルタに <code>CATV</code> として現れます。
+          </Typography>
+          <Divider />
+          <Typography variant="body2" sx={{ fontWeight: 700 }}>
             チューナー固定 (X-Mirakc-Tuner)
           </Typography>
           <Typography variant="body2" color="text.secondary">

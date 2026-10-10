@@ -15,6 +15,7 @@ const services = [
   { id: 400101, serviceId: 101, networkId: 4, type: 1, name: 'NHK BS', channel: { type: 'BS', channel: 'BS15_0' }, remoteControlKeyId: 1, epgReady: false, hasLogoData: true },
   { id: 45328, serviceId: 101, networkId: 11, type: 1, name: 'NHK BS4K', channel: { type: 'BS4K', channel: '45328' }, remoteControlKeyId: 1, epgReady: true, hasLogoData: false },
   { id: 45280, serviceId: 102, networkId: 11, type: 1, name: 'NHK BS8K', channel: { type: 'BS4K', channel: '0xB0E0' }, epgReady: false, hasLogoData: false },
+  { id: 600101, serviceId: 101, networkId: 6, type: 1, name: 'CATV TBS', channel: { type: 'CATV', channel: 'C17' }, remoteControlKeyId: 6, epgReady: true, hasLogoData: true },
   { id: 500001, serviceId: 1, networkId: 5, type: 0xad, name: 'データ放送', channel: { type: 'CS', channel: 'ND02' }, hasLogoData: false },
 ];
 
@@ -52,8 +53,9 @@ function programs() {
 
 const tuners = [
   { index: 0, name: 'GR0', types: ['GR'], command: 'recpt1 --device /dev/px4video0 {{{channel}}} - -', pid: null, isAvailable: true, isFree: true, isUsing: false, isFault: false, users: [] },
-  { index: 1, name: 'BS0', types: ['BS', 'CS'], command: 'recpt1 --device /dev/px4video1 {{{channel}}} - -', pid: 12345, isAvailable: true, isFree: false, isUsing: true, isFault: false, users: [{ id: 'client-1', agent: 'EPGStation', priority: 128 }] },
+  { index: 1, name: 'BS0', types: ['BS', 'CS'], command: 'recpt1 --device /dev/px4video1 {{{channel}}} - -', pid: 12345, isAvailable: true, isFree: false, isUsing: true, isFault: false, users: [{ id: 'client-1', agent: 'EPGStation', priority: 128, streamSetting: { channel: { name: 'NHK BS', type: 'BS', channel: 'BS15_0' }, networkId: 4, serviceId: 101 } }] },
   { index: 2, name: 'BS4K0', types: ['BS4K'], command: 'curl -sG http://decode:40773/stream?channel={{{channel}}}', pid: null, isAvailable: true, isFree: true, isUsing: false, isFault: false, users: [] },
+  { index: 3, name: 'CATV0', types: ['CATV'], command: 'catvrec {{{channel}}} -', pid: 22334, isAvailable: true, isFree: false, isUsing: true, isFault: false, users: [{ id: '192.168.1.10:50000', agent: 'VLC/3.0', priority: 0, streamSetting: { channel: { name: 'CATV-TBS', type: 'CATV', channel: 'C17', tsmfRelTs: 3 }, networkId: 6, serviceId: 101 } }] },
 ];
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };

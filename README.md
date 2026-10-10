@@ -29,6 +29,8 @@ Mirakurun 4.1.x の公式 UI は React + Blueprint.js 製で、ナビゲーシ�
 [yuchi0531/mirakc-BS4K](https://github.com/yuchi0531/mirakc-BS4K) の独自機能を認識します。
 
 - **BS4K / MMT**: チャンネル種別 `BS4K` のサービスは「4K」バッジ付きで表示。`channel` は StreamID(10進または `0x` 16進)としてそのまま扱います。BS4K はデコード済み TLV のパススルー配信で、番組単位ストリームは非対応です(「mirakc WebUI について」に明記)。
+- **CATV**: チャンネル種別 `CATV`(ケーブルテレビ)。GR/BS/CS/SKY と同じ MPEG-TS 扱いで、番組単位ストリームも利用できます。チャンネル番号は `C17` のような英数字も可。EPG 番組表・チューナー種別チップに `CATV` として表示されます。
+- **`streamSetting`**: `/api/tuners` のユーザー情報に Mirakurun 互換の `streamSetting`(channel/networkId/serviceId/eventId)が含まれる場合、チューナー詳細の「チャンネル」列に使用中のチャンネル・サービスを表示します。`tsmf-rel-ts` も `TSMF n` として表示します。
 - **`X-Mirakc-Tuner`**: チャンネルストリームのみチューナーを厳密固定できる旨と curl 例を「mirakc WebUI について」に掲載。
 - **`routes` / `disabled`**: サーバ内部の設定専用で Web API には公開されないため、本 UI では表示・編集できません(README ではなく About 画面にも明記)。
 

@@ -6,8 +6,8 @@ export interface Version {
   latest: string;
 }
 
-/** Known channel types in display order. `BS4K` is a mirakc-BS4K fork extension. */
-export const KNOWN_CHANNEL_TYPES = ['GR', 'BS', 'CS', 'SKY', 'BS4K'] as const;
+/** Known channel types in display order. `BS4K` and `CATV` are mirakc-BS4K fork extensions. */
+export const KNOWN_CHANNEL_TYPES = ['GR', 'BS', 'CS', 'SKY', 'BS4K', 'CATV'] as const;
 export type KnownChannelType = (typeof KNOWN_CHANNEL_TYPES)[number];
 
 export interface ChannelService {
@@ -41,10 +41,29 @@ export interface Service {
   hasLogoData?: boolean;
 }
 
+/** Channel definition embedded in a tuner user's `streamSetting` (Mirakurun-compatible). */
+export interface StreamSettingChannel {
+  name?: string;
+  type: string;
+  channel: string;
+  /** TSMF relative TS number for CATV (`tsmf-rel-ts`). */
+  tsmfRelTs?: number;
+}
+
+/** Mirakurun-compatible `streamSetting` reported for a tuner user by mirakc-BS4K. */
+export interface StreamSetting {
+  channel: StreamSettingChannel;
+  networkId?: number;
+  serviceId?: number;
+  eventId?: number;
+}
+
 export interface TunerUser {
   id: string;
   agent?: string | null;
   priority: number;
+  /** Present only when the fork reports the streamed channel/service (mirakc-BS4K). */
+  streamSetting?: StreamSetting;
 }
 
 export interface Tuner {
